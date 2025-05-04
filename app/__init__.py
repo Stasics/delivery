@@ -1,6 +1,15 @@
 from fastapi import FastAPI
-from .routers import user_routes  # Импортируем user_routes
+from fastapi.middleware.cors import CORSMiddleware
+from .routers import user_routes
 
 app = FastAPI()
 
-app.include_router(user_routes.router, prefix="/users")
+# Настройка CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500"],  # Адрес Live Server
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(user_routes.router)

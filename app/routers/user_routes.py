@@ -12,9 +12,9 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 from typing import Optional, List
 
-router = APIRouter(tags=["users"])
+router = APIRouter(prefix="/users/api/auth",tags=["users"])
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/api/auth/login")
 
 
 async def get_db() -> AsyncSession:
