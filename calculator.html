@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="styleCalculator.css" />
+    <title>QUICKPARCEL - Калькулятор</title>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+                <div class="logo">
+                    <span id="reload-logo" onclick="window.location.href='index.html'">QUICK PARCEL</span>
+                </div>
+            <nav>
+                <ul>
+                    <li>
+                        <button class="login-button" onclick="window.location.href='login.html'">Войти</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    
+    <div class="main-content-calculator">
+        <div class="calculator_container">
+            <h1 class="calculator_text">Калькулятор доставки</h1>
+            
+            <div class="location-section">
+                <h2 class="section-title">Направление доставки</h2>
+                <div class="location-inputs">
+                    <div class="location-input">
+                        <input type="text" placeholder="Откуда (город, регион, страна)" value="">
+                    </div>
+                    <div class="location-swap">
+                        <button class="swap-btn">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                    <div class="location-input">
+                        <input type="text" placeholder="Куда (город, регион, страна)" value="">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="delivery-options">
+                <h2 class="section-title">Параметры доставки</h2>
+                <div class="options-grid">
+                    <div class="option-card active">
+                        <div class="option-title">Обычная</div>
+                        <div class="option-desc">Доставка от 5 до 7 дней.</div>
+                    </div>
+                    <div class="option-card">
+                        <div class="option-title">Экспресс</div>
+                        <div class="option-desc">Доставка от 3 до 5 дней.</div>
+                    </div>
+                    <div class="option-card">
+                        <div class="option-title">Срочная</div>
+                        <div class="option-desc">Доставка от 2 до 3 дней.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="weight-options">
+                <h2 class="section-title">Вес посылки</h2>
+                <div class="weight-input">
+                    <input type="text" placeholder="Вес в кг" value="">
+                </div>
+            </div>
+            
+            <div class="payment-section">
+                <h2 class="section-title">Оплата доставки</h2>
+                <div class="payment-options">
+                    <div class="payment-option active">
+                        <div class="option-title">Отправитель</div>
+                        <div class="option-desc">Оплачиваю я при отправке</div>
+                    </div>
+                    <div class="payment-option">
+                        <div class="option-title">Получатель</div>
+                        <div class="option-desc">Оплачивает получатель</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="check">
+            <h2 class="check-title">Стоимость доставки</h2>
+            <div class="check-summary">
+                <div class="summary-item">
+                    <span>Тариф</span>
+                    <span>0 ₽</span>
+                </div>
+                <div class="summary-item">
+                    <span>Сбор за объявленную стоимость</span>
+                    <span>0 ₽</span>
+                </div>
+                <div class="summary-item">
+                    <span>Страховка</span>
+                    <span>0 ₽</span>
+                </div>
+                <div class="summary-item summary-total">
+                    <span>Итого</span>
+                    <span></span>
+                </div>
+            </div>
+            <button class="check-button">Оформить доставку</button>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="footer-content">
+            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
+        </div>
+    </footer>
+    
+    <script>
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.option-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        document.querySelectorAll('.payment-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        document.querySelector('.swap-btn').addEventListener('click', function() {
+            const fromInput = document.querySelector('.location-input:first-child input');
+            const toInput = document.querySelector('.location-input:last-child input');
+            const temp = fromInput.value;
+            fromInput.value = toInput.value;
+            toInput.value = temp;
+        });
+    </script>
+<script src="js/script.js"></script>
+<script>
+  document.querySelector('.check-button').addEventListener('click', async () => {
+    if (!authToken) {
+      alert('Сначала авторизуйтесь');
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const from = document.querySelector('.location-input:first-child input').value;
+    const to = document.querySelector('.location-input:last-child input').value;
+    const weight = document.querySelector('.weight-input input').value;
+
+    try {
+      const result = await makeRequest('/api/calculate', 'POST', { from, to, weight });
+      document.querySelector('.summary-total span:last-child').textContent = `${result.price} ₽`;
+    } catch (error) {
+      alert(`Ошибка расчёта: ${error.message}`);
+    }
+  });
+</script>
+</body>
+</html>

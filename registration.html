@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация | QUICK PARCEL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .auth-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-form h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .phone-input {
+            margin-bottom: 15px;
+        }
+        .sms-code {
+            display: none;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .entry{
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-form">
+            <h1>Регистрация</h1>
+            <form id="registerForm">
+                <!-- Поле для телефона -->
+                <div class="form-group phone-input">
+                    <label for="phone">Номер телефона:</label>
+                    <input type="tel" id="phone" name="phone" required>
+                    <div id="phone-error" class="error"></div>
+                </div>
+
+                <!-- Скрытое поле для SMS-кода -->
+                <div class="form-group sms-code" id="smsCodeGroup">
+                    <label for="sms-code">SMS-код:</label>
+                    <input type="text" id="sms-code" name="sms-code" maxlength="6">
+                    <button type="button" id="resend-sms">Отправить код повторно</button>
+                    <div id="sms-error" class="error"></div>
+                </div>
+
+                <!-- Пароль (показываем после подтверждения телефона) -->
+                <div class="form-group" id="passwordGroup">
+                    <label for="reg-password">Пароль:</label>
+                    <input type="password" id="reg-password" name="reg-password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">Подтвердите пароль:</label>
+                    <input type="password" id="confirm-password" name="confirm-password" required>
+                    <span id="password-error" class="error-message"></span>
+                </div>
+
+                <button type="submit" id="submit-btn"> Зарегестрироваться </button>
+            </form>
+            <p>Уже есть аккаунт? <a class="entry" href="login.html">Войти</a></p>
+        </div>
+    </div>
+
+    <!-- Библиотека для валидации телефонов -->
+    <script src="js/script.js"></script>
+<script>
+  // Инициализация маски телефона
+  const phoneInput = document.getElementById('phone');
+  const iti = window.intlTelInput(phoneInput, {
+    initialCountry: 'ru',
+    utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js'
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const phone = iti.getNumber();
+  const password = document.getElementById('reg-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+
+  // Валидация
+  if (!iti.isValidNumber()) {
+    alert('Введите корректный номер телефона');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    alert('Пароли не совпадают');
+    return;
+  }
+
+  try {
+    // Формируем полные данные для бэкенда
+    const userData = {
+      email: `${phone.replace('+', '')}@temp.com`,
+      password: password,
+      phone: phone,
+      full_name: "Новый пользователь",  // Добавляем обязательное поле
+      is_courier: false                // Добавляем значение по умолчанию
+    };
+
+    // Отправка данных
+    const response = await fetch('http://localhost:8000/users/api/auth/register', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.detail || 'Ошибка регистрации');
+    }
+
+    alert('Регистрация успешна! Войдите в систему.');
+    window.location.href = 'login.html';
+  } catch (error) {
+    console.error('Ошибка регистрации:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+});
+</script>
+</body>
+</html>

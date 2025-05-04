@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>QUICK PARCEL - услуги курьерской компании.</title>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                 <b id="reload-logo">QUICK PARCEL</b>
+            </div>
+            <nav>
+                <ul>
+                    <li>
+                        <button class="login-button" onclick="window.location.href='login.html'">Войти</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <section class="hero-container">
+            <div class="hero--info">
+                <h1 class="fade-in-text">Доставляем надежно!</h1>
+                <p class="fade-in-text">Мы обеспечиваем доставку по всей России за считанные дни. Просто рассчитайте стоимость и оформите заказ!</p>
+                <button class="hero-button" onclick="scrollToCalculator()">Рассчитать стоимость</button>
+            </div>
+        </section>
+        <section class="features-section">
+            <h2>Почему выбирают нас?</h2>
+            <div class="features">
+                <div class="feature">
+                    <i class="fas fa-truck"></i>
+                    <p>Быстрая доставка</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-box"></i>
+                    <p>Надежная упаковка</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <p>Отслеживание онлайн</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-headset"></i>
+                    <p>Поддержка 24/7</p>
+                </div>
+            </div>
+        </section>
+            
+        <section id="frame-calculator" class="frame-calculator">
+                <div class="frame">
+                    <h2>Рассчитать стоимость доставки</h2>
+                    <form id="delivery-form">
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label for="from">Откуда:</label>
+                                <input type="text" id="from" name="from" placeholder="Город отправления" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="to">Куда:</label>
+                                <input type="text" id="to" name="to" placeholder="Город назначения" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="weight">Вес (кг):</label>
+                                <input type="number" id="weight" name="weight" placeholder="Вес посылки" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="urgency">Срочность:</label>
+                                <select id="urgency" name="urgency">
+                                    <option value="1">Обычная</option>
+                                    <option value="2">Срочная</option>
+                                    <option value="3">Экспресс</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="calculate-button" onclick="window.location.href='calculator.html'">РАССЧИТАТЬ</button>
+                    </form>
+            </section>
+    </div>
+    <div class="map_container">
+        <div id="map" style="width: 100%; height: 400px;"></div>
+    </div>
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=f2f1014b-bed7-4429-b12e-e46447e15a6b&lang=ru_RU" type="text/javascript"></script>
+    <script>
+        ymaps.ready(init);
+
+        function init() {
+            const map = new ymaps.Map("map", {
+                center: [44.952116, 34.102411], 
+                zoom: 12 
+            });
+
+            const placemark = new ymaps.Placemark([44.952116, 34.102411], {
+            });
+
+            map.geoObjects.add(placemark);
+        }
+    </script>
+    <footer>
+        <div class="footer-content">
+            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('reload-logo').addEventListener('click', function() {
+            location.reload();
+        });
+
+        function scrollToCalculator() {
+            document.getElementById('frame-calculator').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
