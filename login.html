@@ -108,30 +108,60 @@
 
     <!-- Библиотека для валидации телефонов -->
     <script src="js/script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
 <script>
-  const iti = window.intlTelInput(document.getElementById('phone'), {
+  const phoneInput = document.getElementById('phone');
+const iti = window.intlTelInput(phoneInput, {
     initialCountry: 'ru',
     utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js'
-  });
+});
 
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const email = document.getElementById('phone').value; // У вас phone, но бэкенд ждет email
-  const password = document.getElementById('password').value;
-
-  try {
-    const data = await makeRequest('/users/login', 'POST', { 
-      email,  // Бэкенд ждет email, а не phone
-      password 
-    });
+// Обработчик формы входа
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
     
-    authToken = data.access_token;
-    localStorage.setItem('authToken', authToken);
-    window.location.href = 'account.html';
-  } catch (error) {
-    alert(`Ошибка входа: ${error.message}`);
-  }
+    // Получаем номер телефона в международном формате
+    const phone = iti.getNumber();
+    const password = document.getElementById('password').value;
+
+    // Валидация номера
+    if (!iti.isValidNumber()) {
+        alert('Пожалуйста, введите корректный номер телефона');
+        return;
+    }
+
+    try {
+        // Формируем email так же, как при регистрации
+        const email = `${phone.replace('+', '')}@temp.com`;
+        
+        // Отправляем запрос на правильный endpoint
+        const response = await fetch('http://localhost:8000/users/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Ошибка входа');
+        }
+
+        const data = await response.json();
+        
+        // Сохраняем токен и перенаправляем
+        localStorage.setItem('authToken', data.access_token);
+        window.location.href = 'account.html';
+        
+    } catch (error) {
+        console.error('Ошибка входа:', error);
+        alert(`Ошибка входа: ${error.message}`);
+    }
 });
 </script>
 </body>
