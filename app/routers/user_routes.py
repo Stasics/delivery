@@ -23,7 +23,7 @@ async def get_db() -> AsyncSession:
 
 
 class LoginRequest(BaseModel):
-    email: str
+    phone: str
     password: str
 
 
@@ -119,9 +119,9 @@ async def get_current_admin_user(current_user: User = Depends(get_current_user))
 
 @router.post("/login")
 async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
-    user = (await db.execute(select(User).where(User.email == request.email))).scalars().first()
+    user = (await db.execute(select(User).where(User.phone == request.phone))).scalars().first()
     if not user or not pwd_context.verify(request.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect phone or password")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
@@ -130,7 +130,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, response_model=UserOut)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    db_user = (await db.execute(select(User).where(User.email == user.email))).scalars().first()
+    db_user = (await db.execute(select(User).where(User.phone == user.phone))).scalars().first()
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
