@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -20,7 +20,11 @@ class Package(Base):
 
     id = Column(Integer, primary_key=True)
     tracking_number = Column(String, unique=True)
-    destination_pvz = Column(String)  # Этот столбец должен быть в БД
+    destination_pvz = Column(String)
+    from_address = Column(String, nullable=True)
+    weight = Column(Float, nullable=True)
+    price = Column(Float, nullable=True)
+    urgency = Column(String, nullable=True)
     status = Column(String, default="created")
     created_at = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

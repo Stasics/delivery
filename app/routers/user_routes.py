@@ -59,12 +59,22 @@ class PackageCreate(BaseModel):
     tracking_number: str
     destination_pvz: str
     user_id: int
+    weight: Optional[float] = None
+    price: Optional[float] = None
+    from_address: Optional[str] = None
+    urgency: Optional[str] = None
 
 
 class PackageOut(BaseModel):
+    id: int
     tracking_number: str
     destination_pvz: str
+    from_address: Optional[str]
+    weight: Optional[float]
+    price: Optional[float]
+    urgency: Optional[str]
     status: str
+    created_at: datetime
 
     class Config:
         orm_mode = True
@@ -212,7 +222,12 @@ async def create_package(
     new_package = Package(
         tracking_number=package_data.tracking_number,
         destination_pvz=package_data.destination_pvz,
+        user_id=package_data.user_id,
         status="created",
+        weight=package_data.weight,
+        price=package_data.price,
+        from_address=package_data.from_address,
+        urgency=package_data.urgency
     )
     db.add(new_package)
     await db.commit()
@@ -232,3 +247,46 @@ async def get_package(
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
     return package
+
+
+# Добавим в user_routes.py
+
+class PackageUpdate(BaseModel):
+    status: str
+
+
+@router.put("/packages/{tracking_number}/pay", response_model=PackageOut)
+async def pay_package(
+        tracking_number: str,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Обновление статуса посылки на 'paid'"""
+    package = await db.execute(
+        select(Package).where(Package.tracking_number == tracking_number)
+    )
+    package = package.scalars().first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    # Обновляем статус и привязываем к пользователю
+    package.status = "paid"
+    package.user_id = current_user.id
+
+    await db.commit()
+    await db.refresh(package)
+    return package
+
+
+@router.get("/packages/", response_model=List[PackageOut])
+async def get_user_packages(
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Получение всех посылок пользователя"""
+    result = await db.execute(
+        select(Package)
+        .where(Package.user_id == current_user.id)
+        .order_by(Package.created_at.desc())
+    )
+    return result.scalars().all()
