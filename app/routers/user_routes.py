@@ -1,3 +1,7 @@
+import asyncio
+import logging
+logger = logging.getLogger(__name__)
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -261,7 +265,6 @@ async def pay_package(
         current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
-    """Обновление статуса посылки на 'paid'"""
     package = await db.execute(
         select(Package).where(Package.tracking_number == tracking_number)
     )
@@ -269,12 +272,14 @@ async def pay_package(
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
 
-    # Обновляем статус и привязываем к пользователю
     package.status = "paid"
     package.user_id = current_user.id
-
     await db.commit()
     await db.refresh(package)
+
+    # Запускаем задачу для автоматического перехода в processing
+    asyncio.create_task(schedule_processing_status(package.id))
+
     return package
 
 
@@ -289,4 +294,95 @@ async def get_user_packages(
         .where(Package.user_id == current_user.id)
         .order_by(Package.created_at.desc())
     )
+    return result.scalars().all()
+
+
+# Добавьте новые модели для статусов
+class PackageStatusUpdate(BaseModel):
+    status: str
+
+
+# Автоматический переход paid → processing (планировщик)
+async def schedule_processing_status(package_id: int):
+    await asyncio.sleep(10)  # Ждем 10 секунд (для теста)
+    async with async_session() as db:
+        async with db.begin():
+            package = await db.get(Package, package_id)
+            if package and package.status == "paid":
+                package.status = "processing"
+                await db.commit()
+    logger.info(f"Checking package {package_id} for status update")
+    if package and package.status == "paid":
+        logger.info(f"Updating package {package_id} to processing")
+
+# Эндпоинты для изменения статусов
+@router.put("/packages/{tracking_number}/status", response_model=PackageOut)
+async def update_package_status(
+        tracking_number: str,
+        status_data: PackageStatusUpdate,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Обновление статуса посылки (для админов и курьеров)"""
+    package = await db.execute(
+        select(Package).where(Package.tracking_number == tracking_number)
+    )
+    package = package.scalars().first()
+
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    # Проверка прав (админ или курьер)
+    if not (current_user.is_admin or current_user.is_courier):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins and couriers can update status"
+        )
+
+    # Валидация переходов статусов
+    valid_transitions = {
+        "created": ["paid"],
+        "paid": ["processing"],
+        "processing": ["shipped"],
+        "shipped": ["delivered"],
+        "delivered": ["completed"]
+    }
+
+    if (package.status in valid_transitions and
+            status_data.status in valid_transitions[package.status]):
+        package.status = status_data.status
+
+        # Если перешли в paid, планируем переход в processing
+        if status_data.status == "paid":
+            asyncio.create_task(schedule_processing_status(package.id, db))
+
+        await db.commit()
+        await db.refresh(package)
+        return package
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status transition from {package.status} to {status_data.status}"
+        )
+
+
+# Эндпоинт для получения всех посылок (для админов/курьеров)
+@router.get("/admin/packages/", response_model=List[PackageOut])
+async def get_all_packages(
+        status: Optional[str] = None,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """Получение всех посылок (для админов и курьеров)"""
+    if not (current_user.is_admin or current_user.is_courier):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins and couriers can view all packages"
+        )
+
+    query = select(Package)
+    if status:
+        query = query.where(Package.status == status)
+
+    result = await db.execute(query.order_by(Package.created_at.desc()))
     return result.scalars().all()
