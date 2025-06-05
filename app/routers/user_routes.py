@@ -386,3 +386,7 @@ async def get_all_packages(
 
     result = await db.execute(query.order_by(Package.created_at.desc()))
     return result.scalars().all()
+
+@router.get("/")
+def home():
+    return {"message": "QUICK PARCEL API is working!"}
