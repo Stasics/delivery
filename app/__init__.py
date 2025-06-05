@@ -5,17 +5,11 @@ from .routers import user_routes
 app = FastAPI()
 
 # Настройка CORS
-origins = [
-    "https://project-delivery-roan.vercel.app",  # Replace with your Vercel frontend URL
-]
-
-# Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=["https://project-delivery-roan.vercel.app/"],  # Адрес Live Server
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(user_routes.router)
