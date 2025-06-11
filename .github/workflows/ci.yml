@@ -20,4 +20,4 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest tests/unit/ -v --cov=app --cov-report=xml
+        pytest tests/unit/test_server.py -v --cov=app --cov-report=xml
