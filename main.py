@@ -1,8 +1,12 @@
 from fastapi import FastAPI
+from app.routers.user_routes import router as user_router
+
 import uvicorn
 import os
 
 app = FastAPI()
+app.include_router(user_router)
+
 
 @app.get("/")  # <--- This defines a route for the root path (/)
 async def read_root():
