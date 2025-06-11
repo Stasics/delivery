@@ -28,7 +28,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pytest tests/unit/ -v --cov=./ --cov-report=xml 
+        pytest tests/unit/ -v --cov=./ --cov-report=xml --junitxml=test-results/junit.xml
 
     - name: Publish Test Report
       uses: mikepenz/action-junit-report@v3
