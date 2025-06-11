@@ -19,7 +19,7 @@ async def test_user_model():
         assert user.verify_password("password") is True
 
 @pytest.mark.asyncio
-async def test_package_model():
+async def test_package_model():  # Use the fixture
     async with async_session() as db:
         package = Package(
             tracking_number="TRACK123",
