@@ -1,4 +1,4 @@
-name: Run Tests
+name: Unit Tests
 
 on:
   push:
@@ -7,12 +7,15 @@ on:
     branches: [ main ]
 
 jobs:
-  unit-tests:
+  unit_testing:
+    name: "🚀 Unit Testing"
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
@@ -20,16 +23,27 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-asyncio httpx
+        pip install pytest pytest-cov
+        # Добавьте другие зависимости, если нужно
 
     - name: Run unit tests
       run: |
-        pytest tests/test_server_health.py -v
+        pytest tests/unit/ -v --cov=./ --cov-report=xml --junitxml=test-results/junit.xml
 
-    - name: Upload test results
-      uses: actions/upload-artifact@v3
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v3
       if: always()
       with:
-        name: unit-test-results
-        path: test-reports/
+        report_paths: 'test-results/junit.xml'
+        check_name: 'Unit Test Results'
+        annotate_only: true
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      if: success()
+
+    - name: Show summary
+      if: always()
+      run: |
+        echo "✅ Unit tests completed!"
+        echo "View coverage report in Codecov"
