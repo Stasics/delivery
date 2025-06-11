@@ -30,6 +30,6 @@ jobs:
       env:
         DATABASE_URL: postgresql+asyncpg://postgres:111@localhost:5432/quickparcel_test
       run: |
-        pytest --cov=app --cov-report=xml tests/
+        pytest --cov=app --cov-report=xml app/tests/
     - name: Upload coverage
       uses: codecov/codecov-action@v3
