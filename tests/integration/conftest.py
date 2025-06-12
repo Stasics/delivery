@@ -20,7 +20,7 @@ def event_loop():
 
 @pytest.fixture(scope="session")
 async def db_engine():
-    engine = create_async_engine("postgresql+asyncpg://postgres:111@localhost:5432/quickparcel")
+    engine = create_async_engine("postgresql+asyncpg://postgres:111@postgres:5432/quickparcel")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
