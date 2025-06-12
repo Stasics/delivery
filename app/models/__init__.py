@@ -14,6 +14,9 @@ async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession
 
 Base = declarative_base()
 
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session
 
 class Package(Base):
     __tablename__ = "packages"

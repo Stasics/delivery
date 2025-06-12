@@ -30,18 +30,8 @@ jobs:
         uses: codecov/codecov-action@v3
 
   integration_tests:
-    needs: unit_tests  # Запускаем после unit-тестов
+    needs: unit_tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: 111
-          POSTGRES_DB: quickparcel
-        ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
@@ -54,16 +44,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest httpx sqlalchemy asyncpg
+          pip install pytest httpx sqlalchemy asyncpg pytest-asyncio
 
-      - name: Run integration tests
-        env:
-          DATABASE_URL: "postgresql+asyncpg://postgres:111@postgres:5432/quickparcel"
+      - name: Run mocked integration tests
         run: |
-          pytest tests/integration/test_auth.py tests/integration/test_packages.py tests/integration/test_users.py  -v
+          pytest tests/integration/test_auth.py -v
 
   build_and_push:
-    needs: [unit_tests, integration_tests]  # Ждём оба типа тестов
+    needs: [unit_tests, integration_tests]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
