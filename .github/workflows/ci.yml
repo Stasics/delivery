@@ -52,5 +52,4 @@ jobs:
         docker tag ${{ secrets.DOCKER_USERNAME }}/yourapp:latest ${{ secrets.DOCKER_HUB_USERNAME }}/yourapp:${{ github.sha }}
         docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
         
-        # Опционально: вывод ссылки на образ
-        echo "Docker image pushed to: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/yourapp"
+      
