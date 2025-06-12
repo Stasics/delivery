@@ -1,4 +1,4 @@
-name: Unit Tests
+name: CI Pipeline
 
 on: [push, pull_request]
 
@@ -16,8 +16,55 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-        pip install pytest pytest-asyncio httpx pytest-cov
+        pip install pytest pytest-asyncio httpx pytest-cov sqlalchemy asyncpg
 
-    - name: Run tests
+    - name: Run unit tests
       run: |
         pytest tests/unit/test_server.py -v --cov=app --cov-report=xml
+
+  integration_tests:
+    needs: unit_tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio httpx pytest-cov sqlalchemy asyncpg
+
+    - name: Wait for PostgreSQL
+      run: sleep 5  # Даем время PostgreSQL запуститься
+
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+      run: |
+        pytest tests/integration/test_auth.py tests/integration/test_packages.py tests/integration/test_users.py -v --cov=app --cov-append --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: integration
+        name: codecov-umbrella
