@@ -20,7 +20,7 @@ def event_loop():
 
 @pytest.fixture(scope="session")
 async def db_engine():
-    engine = create_async_engine("postgresql+asyncpg://postgres:postgres@localhost:5432/test_db")
+    engine = create_async_engine("postgresql+asyncpg://postgres:111@localhost:5432/quickparcel")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
@@ -71,3 +71,4 @@ async def auth_token(client, test_user):
 async def auth_client(client, auth_token):
     client.headers.update({"Authorization": f"Bearer {auth_token}"})
     return client
+

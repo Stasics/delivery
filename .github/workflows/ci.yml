@@ -10,45 +10,74 @@ jobs:
   unit_tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest pytest-cov
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov httpx sqlalchemy asyncpg
 
-    - name: Run tests
-      run: |
-        pytest tests/unit/test_server.py -v --cov=app --cov-report=xml
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/test_server.py -v --cov=app --cov-report=xml
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+
+  integration_tests:
+    needs: unit_tests  # Запускаем после unit-тестов
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 111
+          POSTGRES_DB: quickparcel
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest httpx sqlalchemy asyncpg
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: "postgresql+asyncpg://postgres:111@postgres:5432/quickparcel"
+        run: |
+          pytest tests/integration/test_auth.py tests/integration/test_packages.py tests/integration/test_users.py  -v
 
   build_and_push:
-    needs: unit_tests
-    if: github.ref == 'refs/heads/main'  # Только для main ветки
+    needs: [unit_tests, integration_tests]  # Ждём оба типа тестов
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push
-      run: |
-        # Сборка образа
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/yourapp:latest .
-        
-        # Пушим с двумя тегами: latest и SHA коммита
-        docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:latest
-        docker tag ${{ secrets.DOCKER_USERNAME }}/yourapp:latest ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
-        docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
-        
+      - name: Build and push
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/yourapp:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/yourapp:latest ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
