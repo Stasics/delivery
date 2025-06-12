@@ -49,7 +49,6 @@ jobs:
         
         # Пушим с двумя тегами: latest и SHA коммита
         docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:latest
-        docker tag ${{ secrets.DOCKER_USERNAME }}/yourapp:latest ${{ secrets.DOCKER_HUB_USERNAME }}/yourapp:${{ github.sha }}
+        docker tag ${{ secrets.DOCKER_USERNAME }}/yourapp:latest ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
         docker push ${{ secrets.DOCKER_USERNAME }}/yourapp:${{ github.sha }}
         
-      
