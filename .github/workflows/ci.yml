@@ -22,8 +22,12 @@ jobs:
       run: |
         pytest tests/unit/test_server.py -v --cov=app --cov-report=xml
 
+  # ci.yml
+  name: CI Pipeline
+
+  on: [ push, pull_request ]
+
   integration_tests:
-    needs: unit_tests
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -31,40 +35,39 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
+          POSTGRES_DB: test_db  # Используем существующую БД
         ports:
           - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        # Можно добаисать volumes для сохранения данных между запусками
+        # volumes:
+        #   - postgres_data:/var/lib/postgresql/data
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
+      - name: Установка Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest pytest-asyncio httpx pytest-cov sqlalchemy asyncpg
+      - name: Установка зависимостей
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx pytest-cov sqlalchemy asyncpg
 
-    - name: Wait for PostgreSQL
-      run: sleep 5  # Даем время PostgreSQL запуститься
+      - name: Ожидание PostgreSQL
+        run: |
+          for i in {1..10}; do
+            if pg_isready -h localhost -p 5432 -U postgres; then
+              echo "PostgreSQL готов"
+              break
+            fi
+            echo "Ожидание PostgreSQL..."
+            sleep 2
+          done
 
-    - name: Run integration tests
-      env:
-        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
-      run: |
-        pytest tests/integration/test_auth.py tests/integration/test_packages.py tests/integration/test_users.py -v --cov=app --cov-append --cov-report=xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: integration
-        name: codecov-umbrella
+      - name: Запуск тестов
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+        run: |
+          pytest tests/integration/ -v --cov=app --cov-report=xml
